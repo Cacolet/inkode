@@ -1,0 +1,25 @@
+name: macOS package
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: pnpm install --frozen-lockfile
+      - run: cargo fetch --locked --manifest-path src-tauri/Cargo.toml
+      - run: pnpm typecheck && pnpm test
+      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+      - run: pnpm tauri build --bundles app,dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Inkode-macOS-arm64
+          path: src-tauri/target/release/bundle/dmg/*.dmg
